@@ -51,6 +51,11 @@ int main()
 
 	Player.Currency = STARTINGCASH;
 
+
+	cout << "testing a change for github" << endl;
+	cout << endl;
+	system("pause");
+
 	while (1)
 	{
 		system("cls");
