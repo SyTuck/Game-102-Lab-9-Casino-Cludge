@@ -6,6 +6,7 @@
 
 ****************************************************************************/
 #include <iostream>			//User screen and terminal IO utilities
+#include <windows.h> 
 
 #include "BlackJack.h"
 #include "Slots.h"
@@ -51,11 +52,6 @@ int main()
 
 	Player.Currency = STARTINGCASH;
 
-
-	cout << "testing a change for github" << endl;
-	cout << endl;
-	system("pause");
-
 	while (1)
 	{
 		system("cls");
@@ -86,6 +82,7 @@ int main()
 		case uQUIT:
 		case lQUIT:
 		{
+		
 			return 0;
 		}
 	default:
