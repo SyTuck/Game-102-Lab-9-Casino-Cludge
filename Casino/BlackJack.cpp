@@ -8,6 +8,7 @@
 #include <iostream>			//User screen and terminal IO utilities
 #include <ctime>
 #include <conio.h>			//special keyboard library (to retrieve chars without waiting)
+#include <windows.h>
 
 using namespace std;
 
@@ -17,8 +18,6 @@ enum blackjack
 	HIT,
 	STAY,
 	SPLIT,
-	DOUBLE,
-	INSURANCE,
 	TOTCHOICES
 };
 
@@ -39,13 +38,19 @@ enum bjChoices
 enum person
 {
 	DEALER,
-	PLAYER	
+	PLAYER,
+	PLAYERSPLIT
 };
 enum markers
 {
 	NOTPICKED,
 	PICKED
 };
+
+#define NUMOFSUITS 4
+#define NUMOFCARDS 13
+#define MAXHANDSIZE 10
+#define OVERSIZEDHAND 999
 
 struct card
 {
@@ -54,13 +59,17 @@ struct card
 	char face;
 };
 
-#define NUMOFSUITS 4
-#define NUMOFCARDS 13
-#define MAXHANDSIZE 10
-#define OVERSIZEDHAND 999
+struct player
+{
+	card hand[MAXHANDSIZE] = {};
+	bool isDealer = false;
+	int handValue;
+	bool stayed = false;
+};
+
 
 int deck[4][13] = {};
-card hands[2][MAXHANDSIZE] = {};
+card hands[3][MAXHANDSIZE] = {};
 
 #define DEALERid 0
 #define PLAYERid 1
@@ -391,13 +400,22 @@ int DealOneCard(int pID)
 	int suit, card;
 	int cnt = 0;
 	int retval = 0;
+	bool aceFound = false;
 
 	PickACard(suit, card);
 
 	while (hands[pID][cnt].value != 0)		//find the next available spot
 	{
 		retval += hands[pID][cnt].value;
-		
+		if (hands[pID][cnt].value == 11)
+		{
+			aceFound = true;
+		}
+		if ((retval > 21) && (aceFound))	
+		{
+			retval -= 10;
+			aceFound = false;				//if busted, subtract off 10 for each ace we come across
+		}
 		cnt++;
 		if (cnt >= MAXHANDSIZE)
 		{
@@ -428,6 +446,8 @@ void RunBlackJack()
 	int bet = 0;
 	float Insurance = 0.0;
 	bool Stayed = false;
+	bool split = false;
+	bool doubleDowned = false;
 	bool StillPlaying = false;
 	int PlayerHandValue, DealerHandValue;
 
@@ -459,18 +479,28 @@ void RunBlackJack()
 		cout << endl;
 		if (hands[DEALER][1].value == 11)
 		{
-			cout << "The Dealer has an Ace! Would you like to buy insurance? (Y/N): " << endl;
+			cout << "The Dealer has an Ace! Would you like to buy insurance? (Y/N): ";
 
 			if (YesKeyPressed)
 			{
 				Insurance = bet / 2;
 			}
 		}
+		if (hands[PLAYER][0].face == hands[PLAYER][0].face)
+		{
+			cout << "You have a pair! Do you wish to split? (Y/N): ";
+			if (YesKeyPressed)
+			{
+				split = true;
 
-		cout << "Do you wish to Double Down? (Y/N): " << endl;
+			}
+		}
+
+		cout << "Do you wish to Double Down? (Y/N): ";
 		if (YesKeyPressed())
 		{
 			bet = bet * 2;
+			doubleDowned = true;
 		}
 
 		while (StillPlaying)
@@ -481,13 +511,19 @@ void RunBlackJack()
 
 			DisplayCards(Stayed, bet, Insurance, PlayerHandValue);
 
-			if (!Stayed)
+			if (doubleDowned)
+			{
+				PlayerChoice = HIT;
+				doubleDowned = false;				//player gets one card, so don't do this again
+				Stayed = true;
+			}
+			else if (!Stayed)
 			{
 				PlayerChoice = PromptPlayer();
 			}
 			else
 			{
-			//	sleep()
+				//sleep(250);
 			}
 
 			if (PlayerChoice == HIT)
