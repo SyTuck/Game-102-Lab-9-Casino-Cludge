@@ -38,11 +38,14 @@ enum bjChoices
 
 enum person
 {
-	EMPTY,
-	DEALER = 1,
-	PLAYER = 2	
+	DEALER,
+	PLAYER	
 };
-
+enum markers
+{
+	NOTPICKED,
+	PICKED
+};
 
 struct card
 {
@@ -174,7 +177,9 @@ void PickACard(int &s, int &c)
 		s = rand() % 4;
 		c = rand() % 13;
 
-	} while (deck[s][c] != EMPTY);
+	} while (deck[s][c] != NOTPICKED);
+
+	deck[s][c] = PICKED;
 }
 /*************************************************************
 	DealCards
@@ -188,7 +193,7 @@ void DealCards()
 	int suit = 0;
 	int card = 0;
 
-	for (int y = DEALER-1; y <= PLAYER-1; y++)
+	for (int y = DEALER; y <= PLAYER; y++)
 	{
 		for (int x = 0; x < 2; x++)
 		{
@@ -209,18 +214,29 @@ void DealCards()
 	passed a flag to say whether the Dealer's first card is shown or not
 	
 ************************************************************************/
-void DisplayCards(bool showDeal)
+void DisplayCards(bool showDeal, int bet, float ins, int plyHand)
 {
 	int cnt = 0;
+	
+	cout << "Current Bet: $" << bet << ".00  Insurance: $" << ins;
+	if (ins == (int)ins)
+	{
+		cout << ".00";
+	}
+	else
+	{
+		cout << "0" << endl;
+	}
+	cout << endl;
 
 	cout << "Player: ";
 	do
 	{
-
-		cout << hands[PLAYER - 1][cnt].face << hands[PLAYER - 1][cnt].suit << ", ";
+		cout << hands[PLAYER][cnt].face << hands[PLAYER][cnt].suit << ", ";
 		cnt++;
 
-	} while (hands[PLAYER - 1][cnt].value != 0);
+	} while (hands[PLAYER][cnt].value != 0);
+
 
 	cout << "\t Dealer: ";
 
@@ -233,19 +249,20 @@ void DisplayCards(bool showDeal)
 			cout << "**, ";
 			cnt++;
 		}
-		cout << hands[DEALER - 1][cnt].face << hands[DEALER - 1][cnt].suit << ", ";
+		cout << hands[DEALER][cnt].face << hands[DEALER][cnt].suit << ", ";
 		cnt++;
 
-	} while (hands[DEALER - 1][cnt].value != 0);
+	} while (hands[DEALER][cnt].value != 0);
 
 	cout << endl;
+	cout << endl << "Player Hand Value: " << plyHand << endl;
 	cout << endl;
 }
 
 /****************************************************************************
 	PromptPlayer
 	
-	This function displays out supported blackjack options then inputs and
+	This function displays our supported blackjack options then inputs and
 	returns the player's selection
 	
 *****************************************************************************/
@@ -255,7 +272,7 @@ blackjack PromptPlayer()
 	char pChoice = NOTHING;
 	blackjack retval = NOTHING;
 
-	cout << "[H]it  [S]tay  S[P]lit  [D]ouble  [I]nsurance" << endl;
+	cout << "[H]it [S]tay  S[P]lit" << endl;
 	cout << "Choose an option to play: " << endl;
 
 	do
@@ -283,18 +300,6 @@ blackjack PromptPlayer()
 			retval = SPLIT;
 			break;
 		}
-		case lDOUBLE:
-		case uDOUBLE:
-		{
-			retval = DOUBLE;
-			break;
-		}
-		case lINSURANCE:
-		case uINSURANCE:
-		{
-			retval = INSURANCE;
-			break;
-		}
 		default:
 		{
 			GoodChoice = false;
@@ -303,6 +308,75 @@ blackjack PromptPlayer()
 	} while (!GoodChoice);
 
 	return retval;
+}
+
+/****************************************************************
+	YesKeyPressed
+	
+	This function waits for the player to enter Y, y, N, n
+	and will return true for Y and y
+
+****************************************************************/
+bool YesKeyPressed()
+{
+	char yesno;
+
+	do
+	{
+		yesno = WaitForKey();
+	} while ((yesno != 'Y') && (yesno != 'y') &&
+		(yesno != 'N') && (yesno != 'n'));
+
+	if ((yesno == 'Y' ) || (yesno == 'y'))
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+
+}
+
+/****************************************************************
+	GetBet
+
+	This function prompts the user for the amount of money they
+	wish to bet and returns the value of their wager
+
+****************************************************************/
+int GetBet()
+{
+	char betC;
+	int retval;
+
+	cout << "[1] $5  [2] $10  [3] $20 -- How much would you like to bet? ";
+
+	do
+	{
+		betC = WaitForKey();
+	} while ((betC <= '0') || (betC >= '4'));
+
+	switch (betC)
+	{
+	case '1':
+	{
+		retval = 5;
+		break;
+	}
+	case '2':
+	{
+		retval = 10;
+		break;
+	}
+	case '3':
+	{
+		retval = 20;
+	}
+	}
+
+	return retval;
+
 }
 
 /***************************************************************
@@ -352,6 +426,7 @@ void RunBlackJack()
 	int choice;
 	blackjack PlayerChoice = NOTHING;
 	int bet = 0;
+	float Insurance = 0.0;
 	bool Stayed = false;
 	bool StillPlaying = false;
 	int PlayerHandValue, DealerHandValue;
@@ -362,23 +437,41 @@ void RunBlackJack()
 	cout << "BlackJack Running" << endl;
 	cout << endl;
 	cout << "[1] for bet \t[2] for quit: ";
+	cout << endl;
+	cout << endl;
 	choice = (int) (WaitForKey() - '0');
 
 	if (choice == 1)
 	{
-		cout << endl;
-		cout << "[1] $5  [2] $10  [3] $20 -- How much to bet? ";
-		bet = (int) WaitForKey();
+		bet = GetBet();
 
 		StillPlaying = true;
 
 //		DealCards();
-		DealerHandValue = DealOneCard(DEALERid);
-		DealerHandValue = DealOneCard(DEALERid);
+		DealerHandValue = DealOneCard(DEALER);
+		DealerHandValue = DealOneCard(DEALER);
 
-		PlayerHandValue = DealOneCard(PLAYERid);
-		PlayerHandValue = DealOneCard(PLAYERid);
+		PlayerHandValue = DealOneCard(PLAYER);
+		PlayerHandValue = DealOneCard(PLAYER);
 
+		DisplayCards(Stayed, bet, Insurance, PlayerHandValue);
+
+		cout << endl;
+		if (hands[DEALER][1].value == 11)
+		{
+			cout << "The Dealer has an Ace! Would you like to buy insurance? (Y/N): " << endl;
+
+			if (YesKeyPressed)
+			{
+				Insurance = bet / 2;
+			}
+		}
+
+		cout << "Do you wish to Double Down? (Y/N): " << endl;
+		if (YesKeyPressed())
+		{
+			bet = bet * 2;
+		}
 
 		while (StillPlaying)
 		{
@@ -386,20 +479,29 @@ void RunBlackJack()
 			cout << "Playing BlackJack at the Casino Cludge" << endl;
 			cout << endl;
 
-			DisplayCards(Stayed);
+			DisplayCards(Stayed, bet, Insurance, PlayerHandValue);
 
-			cout << endl << "Player Hand Value: " << PlayerHandValue << endl;
-			cout << endl;
-
-			PlayerChoice = PromptPlayer();
+			if (!Stayed)
+			{
+				PlayerChoice = PromptPlayer();
+			}
+			else
+			{
+			//	sleep()
+			}
 
 			if (PlayerChoice == HIT)
 			{
-				PlayerHandValue = DealOneCard(PLAYERid);
+				PlayerHandValue = DealOneCard(PLAYER);
 				if (PlayerHandValue > 21)
 				{
 					StillPlaying = false;
 				}
+			}
+			else if (PlayerChoice == STAY)
+			{
+				Stayed = true;
+
 			}
 		} //while still playing
 	} //if betting (playing)
