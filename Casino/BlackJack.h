@@ -7,4 +7,4 @@ class BlackJackTable
 
 
 
-void RunBlackJack();
+void RunBlackJack(float &cash);

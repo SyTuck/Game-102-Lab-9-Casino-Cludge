@@ -55,7 +55,7 @@ int main()
 	while (1)
 	{
 		system("cls");
-		cout << "Welcome to the casion" << endl;
+		cout << "Welcome to the Casino Cludge" << endl;
 		cout << endl;
 		cout << "This game was made by Mitchell Labrecque, Jordan Tuck, and Manpreet" << endl;
 		cout << endl;
@@ -70,7 +70,7 @@ int main()
 		case uBLACKJACK:
 		case lBLACKJACK:
 		{
-			RunBlackJack();
+			RunBlackJack(Player.Currency);
 			break;
 		}
 		case uSLOTS:
